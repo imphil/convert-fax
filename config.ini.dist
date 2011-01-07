@@ -1,0 +1,29 @@
+[general]
+; email address the fax messages sent to by the telephone system
+senderAddress=
+; email address the fax messages should be sent to after processing
+mailTo=
+
+; mail account to retrieve the data from. can be POP3 or IMAP
+[mailaccount]
+; see http://php.net/manual/de/function.imap-open.php for details on mailbox
+mailbox={mail.example.com:143/imap}
+user=mail@example.com
+password=xxx
+
+[mailer]
+; possible values: phpmail, smtp
+method=smtp
+
+; if mailer/method == "smtp", then the SMTP with auth is used for sending mails
+; this sections contains the required settings
+[smtp]
+host=mail.example.com
+port=25
+username=mail@example.com
+password=
+
+[comfort-pro]
+username=Administrator
+password=xxx
+url=http://192.168.0.xxx
