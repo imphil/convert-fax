@@ -12,7 +12,9 @@ user=mail@example.com
 password=xxx
 
 [mailer]
-; possible values: phpmail, smtp
+; enable sending of mails (true/false)
+enable=false
+; possible values: phpmail, smtp, none
 method=smtp
 
 ; if mailer/method == "smtp", then the SMTP with auth is used for sending mails
@@ -22,6 +24,10 @@ host=mail.example.com
 port=25
 username=mail@example.com
 password=
+
+[ocr]
+; possible values: abbyyocr, ocrmypdf
+tool = ocrmypdf
 
 [comfort-pro]
 username=Administrator
