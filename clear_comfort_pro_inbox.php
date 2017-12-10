@@ -19,18 +19,18 @@
  */
 
 // Add Zend Framework to include path
-$zfPath = '3rdparty/zendframework/library';
+$zfPath = dirname(__FILE__).'/3rdparty/zendframework/library';
 set_include_path($zfPath.PATH_SEPARATOR.get_include_path());
 
-include 'Zend/Loader/Autoloader.php';
+require_once 'Zend/Loader/Autoloader.php';
 $autoloader = Zend_Loader_Autoloader::getInstance();
-    
+
 function clear_comfort_pro_inbox(Config &$config)
 {
     $username = $config->getValue('comfort-pro/username');
     $password = $config->getValue('comfort-pro/password');
     $adminUrl = $config->getValue('comfort-pro/url');
-    
+
     $client = new Zend_Http_Client();
     $client->setCookieJar();
 
