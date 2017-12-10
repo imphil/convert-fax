@@ -43,12 +43,13 @@ if ($mails === false) {
 }
 
 foreach ($mails as $msgId) {
+    $msgHeader = imap_headerinfo($imapConnection, $msgId);
     $msgBody = imap_fetchbody($imapConnection, $msgId, '1');
     $attachment = imap_fetchbody($imapConnection, $msgId, '2');
 
     // get message filename from structure
     $msgStruct = imap_fetchstructure($imapConnection, $msgId);
-    $filename = '';
+    $origFilename = '';
     if (empty($msgStruct->parts) || count($msgStruct->parts) < 2) {
         echo "Message $msgId does not have expected structure, part 2 is ".
              "missing.\n";
@@ -57,18 +58,35 @@ foreach ($mails as $msgId) {
     $parameters = $msgStruct->parts[1]->dparameters;
     foreach ($parameters as $param) {
         if ($param->attribute == 'filename') {
-            $filename = $param->value;
+            $origFilename = $param->value;
             break;
         }
     }
 
-    // example: 10_16_22_00_008954592422_0003.sff
-    $filenameSplit = explode('_', $filename);
-
-    if ($filenameSplit[4][0] == '0') {
-        $absender = substr($filenameSplit[4], 1);
+    // determine the year of the message from the IMAP headers
+    // unfortunately the telephony system doesn't include the year when the
+    // fax message was received in its filename, so we have to guess.
+    if (!empty($msgHeader->date)) {
+        $dateTs = strtotime($msgHeader->date);
+        $year = date('Y', $dateTs);
     } else {
-        $absender = $filenameSplit[4];
+        $year = date('Y');
+    }
+
+    // example: 10_16_22_00_008954592422_0003.sff
+    //          <month>_<day>_<hour>_<minute>_<incoming_number>_<no_pages>.sff
+    // Note: The incoming number can contain strange characters (instead of a
+    //       number) and should not be used without heavy sanitation.
+    list($month, $day, $hour, $minute, $incomingNumber, $pages) = explode('_', $origFilename);
+
+    $randomString = uniqid();
+    $filename = $year.'_'.$month.'_'.$day.'_'.$hour.'_'.$minute.'_'.$randomString;
+
+    // remove leading 0 (Amtsvorwahl)
+    if ($incomingNumber[0] == '0') {
+        $incomingNumber = substr($incomingNumber, 1);
+    } else {
+        $incomingNumber = $incomingNumber;
     }
 
     $newMailText =<<<EOL
@@ -76,8 +94,8 @@ Hallo,
 
 eine neues Fax ist eingetroffen.
 
-Absender:    $absender
-Zeit:        {$filenameSplit[1]}.{$filenameSplit[0]} um {$filenameSplit[2]}:{$filenameSplit[3]} Uhr
+Absender:    $incomingNumber
+Zeit:        $day.$month.$year um $hour:$minute Uhr
 
 Das Fax ist als PDF-Datei angehängt.
 
@@ -128,7 +146,7 @@ EOL;
         unlink("$tmpfile.pdf");
     }
 
-    $filenamePdf = str_replace('sff', 'pdf', $filename);
+    $filenamePdf = "$filename.pdf";
     if (!copy($outputfile, "/data/fax/$filenamePdf")) {
         throw new Exception("Unable to copy $outputfile to /data/fax/$filenamePdf");
     }
@@ -167,4 +185,3 @@ imap_close($imapConnection);
 
 // clear Comfort Pro inbox to make sure the internal storage isn't overflowing
 clear_comfort_pro_inbox($config);
-
